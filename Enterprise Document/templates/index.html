@@ -3,280 +3,723 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Document Search</title>
+    <title>Enterprise Document Search Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --dark-bg: #1e293b;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
-            background-color: #f4f4f4;
+            color: var(--text-primary);
         }
-        .header {
-            text-align: center;
-            background-color: #4a4a4a;
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-        }
-        .search-container {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            gap: 10px;
-        }
-        .search-container input[type="text"] {
-            padding: 10px;
-            width: 300px;
-            border: 1px solid #ccc;
-            border-radius: 4px 0 0 4px;
-        }
-        .search-container button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 0 4px 4px 0;
-            cursor: pointer;
-        }
-        .search-container button:hover {
-            background-color: #0056b3;
-        }
-        .index-container {
-            text-align: center;
-            margin: 20px 0;
-        }
-        .index-container input[type="text"] {
-            padding: 10px;
-            width: 300px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .index-container input[type="file"] {
-            margin-top: 10px;
-        }
-        .index-container button {
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .index-container button:hover {
-            background-color: #218838;
-        }
-        .progress-container {
-            display: none;
-            margin: 20px auto;
-            max-width: 600px;
-        }
-        .progress-bar {
-            width: 100%;
-            background-color: #ddd;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .progress {
-            width: 0%;
-            height: 20px;
-            background-color: #28a745;
-            text-align: center;
-            line-height: 20px;
-            color: white;
-            transition: width 0.3s;
-        }
-        .progress-text {
-            margin-top: 5px;
-            text-align: center;
-        }
-        .results {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 800px;
+
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
         }
-        .result-card {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-xl);
+            text-align: center;
+            animation: slideDown 0.5s ease-out;
         }
-        .result-card .title {
-            color: #007bff;
-            margin: 0;
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 10px;
         }
-        .result-card .snippet {
-            margin: 5px 0;
-            color: #333;
+
+        /* Index Section */
+        .index-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
-        .result-card .match {
-            margin: 5px 0;
-            color: #28a745;
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .result-card .metadata {
-            margin: 5px 0;
-            color: #666;
-            font-size: 0.9em;
+
+        .input-wrapper {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
         }
-        .result-card .actions {
-            margin-top: 10px;
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8fafc;
         }
-        .result-card .actions button {
-            padding: 5px 10px;
-            margin-right: 10px;
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn {
+            padding: 14px 28px;
             border: none;
-            border-radius: 4px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
         }
-        .result-card .actions .preview {
-            background-color: #17a2b8;
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
             color: white;
         }
-        .message, .count {
-            text-align: center;
-            color: #555;
+
+        .btn-info {
+            background: linear-gradient(135deg, var(--info-color), #2563eb);
+            color: white;
         }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-wrapper {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 32px;
+            background: linear-gradient(90deg, var(--success-color), #34d399);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            transition: width 0.5s ease;
+            box-shadow: var(--shadow-md);
+        }
+
+        .progress-text {
+            margin-top: 12px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .stat-item i {
+            color: var(--primary-color);
+        }
+
+        /* Search Section */
+        .search-section {
+            position: relative;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-input-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .search-input-wrapper input {
+            padding-left: 48px;
+        }
+
+        /* Results */
+        .results-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary-color);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 15px;
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .result-score {
+            background: linear-gradient(135deg, var(--success-color), #34d399);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .result-snippet {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .result-metadata {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .metadata-badge {
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .results-count {
+            text-align: center;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--card-bg);
+            border-radius: 12px;
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
-            z-index: 1;
+            z-index: 1000;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
         }
+
         .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-height: 70vh;
-            overflow-y: auto;
-            position: relative;
-            border-radius: 8px;
+            background: var(--card-bg);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
-        .modal-content iframe {
-            width: 100%;
-            height: 500px;
+
+        .modal-header {
+            padding: 24px 30px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
             border: none;
-        }
-        .close {
-            color: #aaa;
-            position: absolute;
-            top: 10px;
-            right: 20px;
             font-size: 28px;
-            font-weight: bold;
+            color: var(--text-secondary);
             cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
+
+        .modal-close:hover {
+            background: #f1f5f9;
+            color: var(--text-primary);
         }
-        .public-url-container {
-            text-align: center;
-            margin: 20px 0;
-            display: none;
+
+        .modal-body {
+            padding: 30px;
+            flex: 1;
+            overflow: auto;
         }
-        .public-url-container input[type="text"] {
-            padding: 10px;
-            width: 300px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .public-url-container button {
-            padding: 10px 20px;
-            background-color: #dc3545;
-            color: white;
+
+        .modal-body iframe {
+            width: 100%;
+            height: 600px;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
         }
-        .public-url-container button:hover {
-            background-color: #c82333;
+
+        /* Settings Modal */
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .message {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .message-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .message-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid var(--info-color);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .input-wrapper {
+                min-width: 100%;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+
+            .result-header {
+                flex-direction: column;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Enterprise Document Search</h1>
-        <p>Search across all your organization's documents, presentations, and knowledge bases</p>
-    </div>
-    <div class="index-container">
-        <form method="POST" id="index-form">
-            <input type="text" name="directory" id="directory-input" placeholder="Enter directory to index...">
-            <input type="file" id="directory-picker" webkitdirectory directory style="display: none;">
-            <button type="button" onclick="document.getElementById('directory-picker').click();">Choose Directory</button>
-            <button type="submit" name="index">Index Directory</button>
-        </form>
-    </div>
-    <div class="progress-container" id="progress-container">
-        <div class="progress-bar">
-            <div class="progress" id="progress-bar">0%</div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-search"></i> Enterprise Document Search</h1>
+            <p>Search across all your organization's documents, presentations, and knowledge bases</p>
         </div>
-        <p class="progress-text" id="progress-text">Indexing 0/0 files...</p>
-    </div>
-    <div class="search-container">
-        <form method="POST">
-            <input type="text" name="query" value="{{ query or '' }}" placeholder="Search (e.g., metadata.drug:Aspirin or text)">
-            <button type="submit" name="search">Search</button>
-        </form>
-    </div>
-    {% if message %}
-        <p class="message">{{ message }}</p>
-    {% endif %}
-    {% if results %}
-        <div class="results">
-            {% for result in results %}
-                <div class="result-card">
-                    <p class="title">
-                        <span>{{ result.path }}</span>
-                    </p>
-                    <p class="snippet">{{ result.snippet }}</p>
-                    <p class="match">Match: {{ result.match_percentage }}%</p>
+
+        <!-- Messages -->
+        {% if message %}
+        <div class="message message-info">
+            <i class="fas fa-info-circle"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Index Section -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-folder-open"></i>
+                Index Documents
+            </h2>
+            <div class="index-section">
+                <form method="POST" id="index-form">
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <input type="text" name="directory" id="directory-input" 
+                                   placeholder="Enter directory path to index..." 
+                                   value="{{ last_indexed_dir or '' }}">
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('directory-picker').click();">
+                            <i class="fas fa-folder"></i> Choose Directory
+                        </button>
+                        <button type="submit" name="index" class="btn btn-success">
+                            <i class="fas fa-database"></i> Index Directory
+                        </button>
+                    </div>
+                    <input type="file" id="directory-picker" webkitdirectory directory style="display: none;">
+                </form>
+                
+                <div class="progress-container" id="progress-container">
+                    <div class="progress-wrapper">
+                        <div class="progress-bar" id="progress-bar" style="width: 0%">0%</div>
+                    </div>
+                    <p class="progress-text" id="progress-text">Preparing to index...</p>
+                    <div class="progress-stats" id="progress-stats"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="card search-section">
+            <h2 class="card-title">
+                <i class="fas fa-search"></i>
+                Search Documents
+            </h2>
+            <form method="POST">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="query" value="{{ query or '' }}" 
+                           placeholder="Search documents (e.g., metadata.drug:Aspirin or any text)">
+                </div>
+                <div style="margin-top: 15px;">
+                    <button type="submit" name="search" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results -->
+        {% if results %}
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-list"></i>
+                Search Results
+            </h2>
+            <div class="results-container">
+                {% for result in results %}
+                <div class="result-card" onclick="openPreview('{{ result.path | escape }}')">
+                    <div class="result-header">
+                        <div class="result-title">
+                            <i class="fas fa-file-alt"></i> {{ result.path }}
+                        </div>
+                        <div class="result-score">
+                            <i class="fas fa-star"></i> {{ result.match_percentage }}% Match
+                        </div>
+                    </div>
+                    <div class="result-snippet">{{ result.snippet }}</div>
                     {% if result.metadata %}
-                        <p class="metadata">
-                            <b>Metadata:</b>
-                            {% for key, value in result.metadata.items() %}
-                                {{ key }}: {{ value | escape }} {% if not loop.last %}|{% endif %}
-                            {% endfor %}
-                        </p>
+                    <div class="result-metadata">
+                        <span class="metadata-badge"><i class="fas fa-tags"></i> Metadata:</span>
+                        {% for key, value in result.metadata.items() %}
+                        <span class="metadata-badge">{{ key }}: {{ value | escape }}</span>
+                        {% endfor %}
+                    </div>
                     {% endif %}
-                    <div class="actions">
-                        {% set base_dir = last_indexed_dir if last_indexed_dir else '' %}
-                        {% set preview_path = result.path | replace(base_dir + '/', '') | escape if result.path.startswith(base_dir) else result.path | escape %}
-                        <button class="preview" onclick="openPreview('{{ preview_path }}')">Preview</button>
+                    <div class="result-actions">
+                        <button class="btn btn-info btn-sm" onclick="event.stopPropagation(); openPreview('{{ result.path | escape }}')">
+                            <i class="fas fa-eye"></i> Preview
+                        </button>
                     </div>
                 </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
+            <div class="results-count">
+                <i class="fas fa-check-circle"></i> Found {{ count }} result{{ 's' if count != 1 else '' }}
+            </div>
         </div>
-        <p class="count">Found {{ count }} results</p>
-    {% endif %}
+        {% endif %}
 
-    <div id="previewModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closePreview()">×</span>
-            <h2>Document Preview</h2>
-            <iframe id="previewFrame"></iframe>
+        <!-- Preview Modal -->
+        <div id="previewModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-file-pdf"></i> Document Preview</h2>
+                    <button class="modal-close" onclick="closePreview()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <iframe id="previewFrame"></iframe>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="public-url-container" id="public-url-container">
-        <form id="public-url-form" method="POST" action="/update_public_url">
-            <input type="text" name="public_url" id="public-url-input" value="{{ public_url }}" placeholder="Enter public URL (e.g., https://new-ngrok-url.ngrok-free.app)">
-            <button type="submit" name="update_public_url">Update Public URL</button>
-        </form>
-        <p id="public-url-status"></p>
+        <!-- Settings Modal (for dev mode) -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-cog"></i> Settings</h2>
+                    <button class="modal-close" onclick="closeSettings()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="public-url-form" class="settings-form" method="POST" action="/update_public_url">
+                        <div class="form-group">
+                            <label for="public-url-input">
+                                <i class="fas fa-link"></i> Public URL (for ngrok/external access)
+                            </label>
+                            <input type="text" name="public_url" id="public-url-input" 
+                                   value="{{ public_url }}" 
+                                   placeholder="https://your-ngrok-url.ngrok-free.app">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Public URL
+                        </button>
+                        <div id="public-url-status"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -285,62 +728,58 @@
         const progressContainer = document.getElementById("progress-container");
         const progressBar = document.getElementById("progress-bar");
         const progressText = document.getElementById("progress-text");
+        const progressStats = document.getElementById("progress-stats");
         const directoryInput = document.getElementById("directory-input");
         const directoryPicker = document.getElementById("directory-picker");
         const previewModal = document.getElementById("previewModal");
         const previewFrame = document.getElementById("previewFrame");
+        const settingsModal = document.getElementById("settingsModal");
         const publicUrlForm = document.getElementById("public-url-form");
         const publicUrlInput = document.getElementById("public-url-input");
         const publicUrlStatus = document.getElementById("public-url-status");
-        const publicUrlContainer = document.getElementById("public-url-container");
 
+        // Show settings in dev mode
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('dev') === 'true') {
-            publicUrlContainer.style.display = 'block';
+            const settingsBtn = document.createElement('button');
+            settingsBtn.className = 'btn btn-secondary';
+            settingsBtn.innerHTML = '<i class="fas fa-cog"></i> Settings';
+            settingsBtn.style.position = 'fixed';
+            settingsBtn.style.bottom = '20px';
+            settingsBtn.style.right = '20px';
+            settingsBtn.style.zIndex = '999';
+            settingsBtn.onclick = () => settingsModal.style.display = 'block';
+            document.body.appendChild(settingsBtn);
         }
 
-        socket.on("connect", function() { console.log("Connected to SocketIO"); });
-        socket.on("disconnect", function() { console.log("Disconnected from SocketIO"); });
+        socket.on("connect", () => console.log("Connected to SocketIO"));
+        socket.on("disconnect", () => console.log("Disconnected from SocketIO"));
 
         directoryPicker.addEventListener("change", function(event) {
             const files = event.target.files;
-            console.log("Files selected:", files);
             if (files.length > 0) {
                 const file = files[0];
                 let directory = '';
                 if (file.path) {
                     directory = file.path.substring(0, file.path.lastIndexOf('/'));
-                    console.log("Extracted directory using file.path:", directory);
                 } else if (file.webkitRelativePath) {
                     const relativePathParts = file.webkitRelativePath.split('/');
                     relativePathParts.pop();
                     directory = relativePathParts.join('/');
-                    console.log("Extracted relative directory using webkitRelativePath:", directory);
                     const suggestedPath = '/Volumes/' + directory;
                     directoryInput.value = suggestedPath;
-                    console.log("Suggested full path:", suggestedPath);
-                    const userConfirmed = confirm(`Suggested path: ${suggestedPath}\nIs this correct? Click OK to index, or Cancel to enter a custom path.`);
-                    if (userConfirmed) {
-                        console.log("User confirmed, triggering indexing with:", suggestedPath);
+                    if (confirm(`Suggested path: ${suggestedPath}\nIs this correct?`)) {
                         startIndexing(suggestedPath);
-                    } else {
-                        console.log("User cancelled, requiring manual entry.");
-                        alert("Please enter the full path in the input field and click 'Index Directory'.");
                     }
                 } else {
-                    console.warn("Could not determine directory path from picker.");
-                    alert("Unable to determine the directory path. Please manually enter the full path.");
+                    alert("Unable to determine directory path. Please manually enter the full path.");
                 }
-            } else {
-                console.warn("No files selected in directory picker.");
-                alert("No directory selected. Please try again.");
             }
         });
 
         form.addEventListener("submit", function(event) {
             event.preventDefault();
             const directory = directoryInput.value.trim();
-            console.log("Submitting index request for directory:", directory);
             if (!directory) {
                 alert("Please select or enter a directory to index.");
                 return;
@@ -349,40 +788,71 @@
         });
 
         function startIndexing(directory) {
-            console.log("Starting indexing for directory:", directory);
             progressContainer.style.display = "block";
             progressBar.style.width = "0%";
             progressBar.textContent = "0%";
-            progressText.textContent = "Indexing 0/0 files...";
+            progressText.textContent = "Starting indexing...";
+            progressStats.innerHTML = '';
             socket.emit("start_indexing", { directory: directory });
         }
 
         socket.on("index_progress", function(data) {
-            const progress = data.progress.toFixed(2);
+            const progress = Math.round(data.progress);
             progressBar.style.width = progress + "%";
             progressBar.textContent = progress + "%";
             progressText.textContent = `Indexing ${data.indexed}/${data.total} files...`;
+            
+            let statsHTML = '';
+            if (data.repaired) {
+                statsHTML += `<div class="stat-item"><i class="fas fa-tools"></i> Repaired: ${data.repaired}</div>`;
+            }
+            if (data.corrupt) {
+                statsHTML += `<div class="stat-item"><i class="fas fa-exclamation-triangle"></i> Corrupt: ${data.corrupt}</div>`;
+            }
+            progressStats.innerHTML = statsHTML;
         });
 
         socket.on("index_complete", function(data) {
             progressContainer.style.display = "none";
-            alert(data.message);
-            window.location.reload();
+            showMessage(data.message, 'success');
+            setTimeout(() => window.location.reload(), 2000);
         });
 
         function openPreview(filePath) {
-            filePath = filePath.replace(/^\/+/, '');
-            console.log("File path for preview:", filePath);
+            const lastIndexedDir = '{{ last_indexed_dir or "" }}';
+            let previewPath = filePath;
+            
+            // If the path starts with last_indexed_dir, make it relative
+            if (lastIndexedDir && filePath.startsWith(lastIndexedDir)) {
+                previewPath = filePath.substring(lastIndexedDir.length).replace(/^\/+/, '');
+            } else if (filePath.startsWith('/')) {
+                // For absolute paths that don't match last_indexed_dir,
+                // try to extract relative portion first (filename with parent dir)
+                // This helps when directory structure is similar
+                const pathParts = filePath.split('/').filter(p => p);
+                if (pathParts.length >= 2) {
+                    // Use last 2 parts (parent dir + filename) as fallback
+                    previewPath = pathParts.slice(-2).join('/');
+                } else if (pathParts.length === 1) {
+                    // Just filename
+                    previewPath = pathParts[0];
+                } else {
+                    // Keep as absolute path - backend will handle it
+                    previewPath = filePath;
+                }
+            } else {
+                // Already relative, just clean up
+                previewPath = filePath.replace(/^\/+/, '');
+            }
+            
             previewModal.style.display = "block";
             let publicBaseUrl = '{{ public_url }}';
-            if (!publicBaseUrl || publicBaseUrl === 'https://default-public-url.com') {
+            if (!publicBaseUrl || publicBaseUrl === 'http://localhost:5000') {
                 publicBaseUrl = window.location.origin;
-                console.warn("No valid public URL provided, using current origin:", publicBaseUrl);
             }
-            console.log("Public Base URL:", publicBaseUrl);
-            const previewUrl = `${publicBaseUrl}/preview/${encodeURIComponent(filePath)}`;
+            const previewUrl = `${publicBaseUrl}/preview/${encodeURIComponent(previewPath)}`;
             previewFrame.src = previewUrl;
-            console.log("Preview URL set to:", previewUrl);
+            console.log("Preview - Original:", filePath, "Indexed dir:", lastIndexedDir, "Preview path:", previewPath, "URL:", previewUrl);
         }
 
         function closePreview() {
@@ -390,15 +860,21 @@
             previewFrame.src = '';
         }
 
+        function closeSettings() {
+            settingsModal.style.display = "none";
+        }
+
         window.onclick = function(event) {
-            if (event.target == previewModal) {
-                closePreview();
-            }
+            if (event.target == previewModal) closePreview();
+            if (event.target == settingsModal) closeSettings();
         };
 
         publicUrlForm.addEventListener("submit", function(event) {
             event.preventDefault();
             const newUrl = publicUrlInput.value.trim();
+            const statusDiv = publicUrlStatus;
+            statusDiv.innerHTML = '<div class="spinner"></div> Updating...';
+            
             fetch('/update_public_url', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -407,21 +883,27 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === "success") {
-                    publicUrlStatus.textContent = `Public URL updated to: ${data.public_url}`;
-                    publicUrlStatus.style.color = "green";
-                    setTimeout(() => publicUrlStatus.textContent = "", 3000);
-                    window.location.reload();
+                    statusDiv.innerHTML = `<div class="message message-success"><i class="fas fa-check-circle"></i> Public URL updated to: ${data.public_url}</div>`;
+                    setTimeout(() => {
+                        statusDiv.innerHTML = '';
+                        window.location.reload();
+                    }, 2000);
                 } else {
-                    publicUrlStatus.textContent = data.message;
-                    publicUrlStatus.style.color = "red";
+                    statusDiv.innerHTML = `<div class="message message-error"><i class="fas fa-exclamation-circle"></i> ${data.message}</div>`;
                 }
             })
             .catch(error => {
-                console.error("Error updating public URL:", error);
-                publicUrlStatus.textContent = "Error updating public URL";
-                publicUrlStatus.style.color = "red";
+                statusDiv.innerHTML = `<div class="message message-error"><i class="fas fa-exclamation-circle"></i> Error updating public URL</div>`;
             });
         });
+
+        function showMessage(text, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${type}`;
+            messageDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'info'}-circle"></i> <span>${text}</span>`;
+            document.querySelector('.container').insertBefore(messageDiv, document.querySelector('.header').nextSibling);
+            setTimeout(() => messageDiv.remove(), 5000);
+        }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'931558b96f4e4532',t:'MTc0NDgyMzk1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

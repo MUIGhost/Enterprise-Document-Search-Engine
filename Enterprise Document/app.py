@@ -445,23 +445,65 @@ def preview_file(file_path):
         logger.debug(f"Last indexed directory: {last_indexed_dir}")
 
         file_path = os.path.normpath(file_path)
-        if '..' in file_path or file_path.startswith('/'):
-            logger.error(f"Invalid path: {file_path}")
+        
+        # Security check for path traversal
+        if '..' in file_path:
+            logger.error(f"Invalid path (contains ..): {file_path}")
             return jsonify({"error": "Invalid path"}), 400
 
-        full_path = os.path.normpath(os.path.join(last_indexed_dir, file_path.replace('/', os.sep)))
-        logger.debug(f"Requested path: {full_path}")
+        full_path = None
+        
+        # First, try if the provided path is already an absolute path that exists
+        if os.path.isabs(file_path) and os.path.exists(file_path) and os.path.isfile(file_path):
+            full_path = file_path
+            logger.debug(f"Using absolute path directly: {full_path}")
+        else:
+            # Try relative path approach (original behavior)
+            if file_path.startswith('/'):
+                # Remove leading slash for relative path
+                file_path = file_path.lstrip('/')
+            
+            full_path = os.path.normpath(os.path.join(last_indexed_dir, file_path.replace('/', os.sep)))
+            logger.debug(f"Trying relative path: {full_path}")
 
-        if not os.path.exists(full_path):
-            possible_paths = glob.glob(os.path.join(last_indexed_dir, '*', '*'))
-            matching_path = next((p for p in possible_paths if os.path.basename(p).lower() == os.path.basename(full_path).lower()), None)
-            if matching_path:
-                full_path = matching_path
-                logger.debug(f"Matched path: {full_path}")
-            else:
-                logger.error(f"File not found: {full_path}")
-                return jsonify({"error": "File not found"}), 404
-        elif not os.path.isfile(full_path):
+            if not os.path.exists(full_path) or not os.path.isfile(full_path):
+                # Try to find by filename in the indexed directory
+                filename = os.path.basename(file_path)
+                logger.debug(f"Searching for filename: {filename} in {last_indexed_dir}")
+                
+                # Search recursively in last_indexed_dir
+                search_pattern = os.path.join(last_indexed_dir, '**', filename)
+                possible_paths = glob.glob(search_pattern, recursive=True)
+                matching_path = next((p for p in possible_paths if os.path.isfile(p)), None)
+                
+                if matching_path:
+                    full_path = matching_path
+                    logger.debug(f"Found file by name: {full_path}")
+                else:
+                    # Last resort: try to find in Elasticsearch by searching for files with this filename
+                    try:
+                        search_results = es.search(index="knowledge_repo", body={
+                            "query": {
+                                "wildcard": {
+                                    "path": f"*{filename}"
+                                }
+                            },
+                            "size": 10
+                        })
+                        for hit in search_results.get("hits", {}).get("hits", []):
+                            stored_path = hit["_source"].get("path", "")
+                            if stored_path and os.path.exists(stored_path) and os.path.isfile(stored_path):
+                                full_path = stored_path
+                                logger.debug(f"Found file from Elasticsearch: {full_path}")
+                                break
+                    except Exception as e:
+                        logger.debug(f"Elasticsearch search failed: {e}")
+                    
+                    if not full_path or not os.path.exists(full_path):
+                        logger.error(f"File not found: {file_path} (tried: {full_path})")
+                        return jsonify({"error": "File not found"}), 404
+        
+        if not os.path.isfile(full_path):
             logger.error(f"Not a file: {full_path}")
             return jsonify({"error": "Not a file"}), 400
 
